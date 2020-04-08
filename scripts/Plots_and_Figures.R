@@ -16,23 +16,15 @@
 #'        2 = Calamagrostis
 #'        3 = Linnaea
 #'        4 = Hypnum
+#'  - check path for destination folder when saving figures -> section 0, b
 #' ------------------------------------------------------------------#
 
 #' ------------------------------------------------------------------#
 #'   TO DO:
-#'  - Need to update trait variables (when available) that are selected 
-#'    when converting to long format -> ca. l. 50
-#'  - TBD: hierarchy when imputing/bootstrapping
-#'    for now using: Site > Treatment > PlotID
-#'        - changing this requires modifying select and gather when 
-#'          making the long dfs
-#'  - TBD: number of reps and sample size for bootstrapping
-#'  - Rank sites from high to low as opposed to alphabetical
-#'    for plotting
-#'  - if we do decide to plot outputs maybe set better colour scheme
-#'    manually
-#'  - might be worth exchanging gather for pivot_longer() as gather()
-#'    is a depreciated function  
+#'  - Set wd when moving to GitHub repo
+#'  - Work on refining the Field Sites Map
+#'       Place inset in main map
+#'       Export as a file
 #' ------------------------------------------------------------------#
 
 ### 0) Preamble ----
@@ -50,9 +42,21 @@ library(maptools)
 library(mapview)
 library(grid)
 library(ggmap)
+library(jtools)
+library(gridExtra)
+library(grid)
+
+### >> b) Administrative ----
+#set save destiantion for figures
+#currently: 
+setwd("~/")
+
+#Generate plank panels when compiling final figures
+blank <- grid.rect(gp=gpar(col="white"))
 
 ### 1) Map of Field Sites ----
 ### >> a) Sweden overview ----
+#could use as an insert
 world <- world
 dat <- read.delim("Gen.txt", header = T)
 ords <- dat[c(17,3,35,52,55,43,27),]
@@ -68,8 +72,7 @@ overplot <- ggplot(swe) +
   ylab(NULL) +
   geom_point(aes(x = 18.06, y = 59.33), shape = 16,
              color = "black", size = 3)
-#could use as an insert
-#need to remove the side panels though...
+
 
 ### >> b) Site map ----
 gen <- read.delim("Gen.txt", header = T)
@@ -93,7 +96,329 @@ ggmap(map) +
         axis.title = element_blank())
 
 ### 2) Model outputs ----
-### >> a) Sweden overview ----
+### >> a) Barbilophozia ----
+### >>>> i) Estimate plot ----
+
+plot.barb.est <-
+  plot_summs(mod.PA[[1]],
+             colors = "Rainbow",
+             coefs = c("Mean annual temperature" = "MAT",
+                       "Canopy gap" = "canopy_gap"))
+
+ggsave("Barbilophozia_estimate.png", 
+       plot.barb.est,
+       width = 11,
+       height = 8)
+
+### >>>> ii) Predict plot ----
+
+plot.barb.pred <-
+  plot.PA[[1]] +
+  facet_wrap(vars(group),
+             labeller = as_labeller(c("MAT" = "Mean annual temperature",
+                                      "canopy_gap" = "Canopy gap")))
+
+ggsave("Barbilophozia_predict.png", 
+       plot.barb.pred,
+       width = 11,
+       height = 8.5)
+
+### >> b) Calamagrostis ----
+### >>>> i) Estimate plot ----
+
+plot.cal.est <-
+  plot_summs(mod.area[[2]],
+             mod.density[[2]],
+             mod.flower.noint[[2]],
+             colors = "Rainbow",
+             coefs = c("Mean annual temperature" = "MAT",
+                       "Maximum temperature" = "gs_max95",
+                       "Canopy gap" = "canopy_gap",
+                       "\u0394 volume" = "vol",
+                       "\u0394 volume:Canopy gap" = "canopy_gap:vol"),
+             model.names = c("Area",
+                             "Density",
+                             "Reproductive potential"))
+
+ggsave("Calamagrostis_estimate.png", 
+       plot.cal.est,
+       width = 13,
+       height = 8)
+
+### >>>> ii) Predict plot ----
+
+plot.cal.pred <-
+  grid.arrange(plot.area[[2]] +
+                 facet_wrap(vars(group),
+                            labeller = as_labeller(c("MAT" = "Mean annual temperature",
+                                                     "gs_max95" = "Maximum temperature",
+                                                     "canopy_gap" = "Canopy gap",
+                                                     "vol" = "\u0394 volume",
+                                                     "canopy_gap:vol" = "\u0394 volume:Canopy gap"))) +
+                 labs(tag = "A-i") +
+                 xlab(NULL),
+               heat.area[[2]] +
+                 labs(tag = "A-ii") +
+                 xlab("\u0394 volume") +
+                 ylab("Canopy gap") +
+                 geom_vline(aes(xintercept = 0),
+                            linetype = 2) +
+                 geom_segment(aes(
+                   x = 0.2,
+                   xend = 2,
+                   y = 1.67,
+                   yend = 1.67),
+                   arrow = arrow()) +
+                 geom_segment(aes(
+                   x = -0.2,
+                   xend = -2,
+                   y = 1.67,
+                   yend = 1.67),
+                   arrow = arrow()) + 
+                 annotate(geom = "text", x=0.5, y=1.82, 
+                          label = "Got darker") + 
+                 annotate(geom = "text", x=-0.5, y=1.82, 
+                          label = "Got lighter"),
+               plot.density[[2]] +
+                 facet_wrap(vars(group),
+                            labeller = as_labeller(c("MAT" = "Mean annual temperature",
+                                                     "gs_max95" = "Maximum temperature",
+                                                     "canopy_gap" = "Canopy gap",
+                                                     "vol" = "\u0394 volume",
+                                                     "canopy_gap:vol" = "\u0394 volume:Canopy gap"))) +
+                 labs(tag = "B-i") +
+                 xlab(NULL),  
+               heat.density[[2]] +
+                 labs(tag = "B-ii") +
+                 xlab("\u0394 volume") +
+                 ylab("Canopy gap") +
+                 geom_vline(aes(xintercept = 0),
+                            linetype = 2) +
+                 geom_segment(aes(
+                   x = 0.2,
+                   xend = 2,
+                   y = 1.67,
+                   yend = 1.67),
+                   arrow = arrow()) +
+                 geom_segment(aes(
+                   x = -0.2,
+                   xend = -2,
+                   y = 1.67,
+                   yend = 1.67),
+                   arrow = arrow()) + 
+                 annotate(geom = "text", x=0.5, y=1.82, 
+                          label = "Got darker") + 
+                 annotate(geom = "text", x=-0.5, y=1.82, 
+                          label = "Got lighter"),
+               plot.flower.noint[[2]] +
+                 facet_wrap(vars(group),
+                            labeller = as_labeller(c("MAT" = "Mean annual temperature",
+                                                     "gs_max95" = "Maximum temperature",
+                                                     "canopy_gap" = "Canopy gap",
+                                                     "vol" = "\u0394 volume",
+                                                     "canopy_gap:vol" = "\u0394 volume:Canopy gap"))) +
+                 labs(tag = "C",
+                      title = "Reproductive potential") +
+                 xlab(NULL)
+  )
+
+ggsave("Calamagrostis_predict.png", 
+       plot.cal.pred,
+       width = 11,
+       height = 9.5)
+
+### >> c) Linnaea ----
+### >>>> i) Estimate plot ----
+
+plot.lin.est <-
+  plot_summs(mod.PA.noint[[3]],
+             mod.area[[3]],
+             mod.density[[3]],
+             mod.flower.noint[[3]],
+             colors = "Rainbow",
+             coefs = c("Mean annual temperature" = "MAT",
+                       "Maximum temperature" = "gs_max95",
+                       "Canopy gap" = "canopy_gap",
+                       "\u0394 volume" = "vol",
+                       "\u0394 volume:Canopy gap" = "canopy_gap:vol"),
+             model.names = c("Presence/absence",
+                             "Area",
+                             "Density",
+                             "Reproductive potential"))
+
+ggsave("Linnaea_estimate.png", 
+       plot.lin.est,
+       width = 13,
+       height = 8)
+
+### >>>> ii) Predict plot ----
+
+plot.lin.pred <- 
+  grid.arrange(plot.PA.noint[[3]] +
+                 facet_wrap(vars(group),
+                            labeller = as_labeller(c("MAT" = "Mean annual temperature",
+                                                     "gs_max95" = "Maximum temperature",
+                                                     "canopy_gap" = "Canopy gap",
+                                                     "vol" = "\u0394 volume",
+                                                     "canopy_gap:vol" = "\u0394 volume:Canopy gap"))) +
+                 labs(tag = "A") +
+                 xlab(NULL),
+               blank,
+               plot.area[[3]] +
+                 facet_wrap(vars(group),
+                            labeller = as_labeller(c("MAT" = "Mean annual temperature",
+                                                     "gs_max95" = "Maximum temperature",
+                                                     "canopy_gap" = "Canopy gap",
+                                                     "vol" = "\u0394 volume",
+                                                     "canopy_gap:vol" = "\u0394 volume:Canopy gap"))) +
+                 labs(tag = "B-i") +
+                 xlab(NULL),
+               heat.area[[3]] +
+                 labs(tag = "B-ii") +
+                 xlab("\u0394 volume") +
+                 ylab("Canopy gap") +
+                 geom_vline(aes(xintercept = 0),
+                            linetype = 2) +
+                 geom_segment(aes(
+                   x = 0.2,
+                   xend = 2,
+                   y = 1.67,
+                   yend = 1.67),
+                   arrow = arrow()) +
+                 geom_segment(aes(
+                   x = -0.2,
+                   xend = -2,
+                   y = 1.67,
+                   yend = 1.67),
+                   arrow = arrow()) + 
+                 annotate(geom = "text", x=0.5, y=1.82, 
+                          label = "Got darker") + 
+                 annotate(geom = "text", x=-0.5, y=1.82, 
+                          label = "Got lighter"),
+               plot.density[[3]] +
+                 facet_wrap(vars(group),
+                            labeller = as_labeller(c("MAT" = "Mean annual temperature",
+                                                     "gs_max95" = "Maximum temperature",
+                                                     "canopy_gap" = "Canopy gap",
+                                                     "vol" = "\u0394 volume",
+                                                     "canopy_gap:vol" = "\u0394 volume:Canopy gap"))) +
+                 labs(tag = "C-i") +
+                 xlab(NULL),  
+               heat.density[[3]] +
+                 labs(tag = "C-ii") +
+                 xlab("\u0394 volume") +
+                 ylab("Canopy gap") +
+                 geom_vline(aes(xintercept = 0),
+                            linetype = 2) +
+                 geom_segment(aes(
+                   x = 0.2,
+                   xend = 2,
+                   y = 1.67,
+                   yend = 1.67),
+                   arrow = arrow()) +
+                 geom_segment(aes(
+                   x = -0.2,
+                   xend = -2,
+                   y = 1.67,
+                   yend = 1.67),
+                   arrow = arrow()) + 
+                 annotate(geom = "text", x=0.5, y=1.82, 
+                          label = "Got darker") + 
+                 annotate(geom = "text", x=-0.5, y=1.82, 
+                          label = "Got lighter"),
+               plot.flower.noint[[3]] +
+                 facet_wrap(vars(group),
+                            labeller = as_labeller(c("MAT" = "Mean annual temperature",
+                                                     "gs_max95" = "Maximum temperature",
+                                                     "canopy_gap" = "Canopy gap",
+                                                     "vol" = "\u0394 volume",
+                                                     "canopy_gap:vol" = "\u0394 volume:Canopy gap"))) +
+                 labs(tag = "D",
+                      title = "Reproductive potential") +
+                 xlab(NULL),
+               ncol = 2
+  )
+
+ggsave("Linnaea_predict.png", 
+       plot.lin.pred,
+       width = 11,
+       height = 11)
+
+### >> d) Hypnum ----
+### >>>> i) Estimate plots ----
+
+plot.hyp.est <-
+  grid.arrange(plot_summs(mod.PA.noint[[4]],
+                          mod.area[[4]],
+                          colors = "Rainbow",
+                          coefs = c("Mean annual temperature" = "MAT",
+                                    "Maximum temperature" = "gs_max95",
+                                    "Canopy gap" = "canopy_gap",
+                                    "\u0394 volume" = "vol",
+                                    "\u0394 volume:Canopy gap" = "canopy_gap:vol",
+                                    "Number of boulders" = "boulder"),
+                          model.names = c("Presence/absence",
+                                          "Area"))
+  )
+
+ggsave("Hypnum_estimate.png", 
+       plot.hyp.est,
+       width = 11,
+       height = 8)
+
+### >>>> ii) Prediction Plots ----
+
+plot.hyp.pred <-
+  grid.arrange(plot.PA.noint[[4]] +
+                 facet_wrap(vars(group),
+                            labeller = as_labeller(c("MAT" = "Mean annual temperature",
+                                                     "gs_max95" = "Maximum temperature",
+                                                     "canopy_gap" = "Canopy gap",
+                                                     "vol" = "\u0394 volume",
+                                                     "canopy_gap:vol" = "\u0394 volume:Canopy gap",
+                                                     "boulder" = "Number of boulders"))) +
+                 labs(tag = "A") +
+                 xlab(NULL),
+               blank,
+               plot.area[[4]] +
+                 facet_wrap(vars(group),
+                            labeller = as_labeller(c("MAT" = "Mean annual temperature",
+                                                     "gs_max95" = "Maximum temperature",
+                                                     "canopy_gap" = "Canopy gap",
+                                                     "vol" = "\u0394 volume",
+                                                     "canopy_gap:vol" = "\u0394 volume:Canopy gap",
+                                                     "boulder" = "Number of boulders"))) +
+                 labs(tag = "B-i") +
+                 xlab(NULL),
+               heat.area[[4]] +
+                 labs(tag = "B-ii") +
+                 xlab("\u0394 volume") +
+                 ylab("Canopy gap") +
+                 geom_vline(aes(xintercept = 0),
+                            linetype = 2) +
+                 geom_segment(aes(
+                   x = 0.2,
+                   xend = 2,
+                   y = 1.67,
+                   yend = 1.67),
+                   arrow = arrow()) +
+                 geom_segment(aes(
+                   x = -0.2,
+                   xend = -2,
+                   y = 1.67,
+                   yend = 1.67),
+                   arrow = arrow()) + 
+                 annotate(geom = "text", x=0.5, y=1.82, 
+                          label = "Got darker") + 
+                 annotate(geom = "text", x=-0.5, y=1.82, 
+                          label = "Got lighter"),
+               ncol = 2
+  )
+
+ggsave("Hypnum_predict.png", 
+       plot.hyp.pred,
+       width = 11,
+       height = 8)
 
 # End of script ----
 
