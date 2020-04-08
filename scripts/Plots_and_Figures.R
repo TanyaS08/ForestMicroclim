@@ -21,7 +21,6 @@
 
 #' ------------------------------------------------------------------#
 #'   TO DO:
-#'  - Set wd when moving to GitHub repo
 #'  - Work on refining the Field Sites Map
 #'       Place inset in main map
 #'       Export as a file
@@ -49,7 +48,7 @@ library(grid)
 ### >> b) Administrative ----
 #set save destiantion for figures
 #currently: 
-setwd("~/")
+setwd("/Users/tanyastrydom/Documents/Uni/Uni/Thesis/ForestMicroclim/figures")
 
 #Generate plank panels when compiling final figures
 blank <- grid.rect(gp=gpar(col="white"))
