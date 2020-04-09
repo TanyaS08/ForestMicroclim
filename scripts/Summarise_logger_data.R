@@ -105,13 +105,13 @@ logger_raw <-
     RH_new = RH_new$RH_new
   )
 
-### 2) Calcualting Growing Season Length ---- 
+### 2) Growing Season ---- 
 
 #' ------------------------------------------------------------------#
-#' #A frowing day is above 5º and below 35º
-#' #This corrects for potentially erronious RH readings
+#' #A growing day is above 5º and below 35º
 #' ------------------------------------------------------------------#
 
+### >> a) Calculating growing season length ----
 x <- logger_raw %>%
   #select air loggers
   filter(Loc == "AT") %>%
@@ -132,8 +132,9 @@ grow_season <-
   group_by(Site) %>%
   summarise(gs_length = sum(test))
 
-
-gs_calc <- x[!(x$test==0),c(1,2,3,4)] %>% #creates template so we can do calcs on growing days
+#creates template so we can do calcs on growing days
+gs_calc <- x[!(x$test==0), #extarcts vales not equal to zero
+             c(1,2,3,4)] %>% #keep cols 1:4
   #this produces days that growing can potentially occur
   inner_join(.,
              logger_raw,
@@ -141,36 +142,37 @@ gs_calc <- x[!(x$test==0),c(1,2,3,4)] %>% #creates template so we can do calcs o
                     "year",
                     "dayofyear")) 
 
+### >> b) Growing season max air temps ----
+#this calculates the maximum air temperature of growing days
 gs_air <-
   gs_calc %>%
+  #selct only air loggers
   filter(Loc == "AT") %>%
+  #group by site
   group_by(Site) %>%
+  #extract max and 95th percentile of max
   summarise(gs_max = max(Celsius),
             gs_max95 = list(enframe(quantile(`max(Celsius)`, probs = 0.95),
                                  name = NULL,
                                  value = "gs_max95")),
-            gs_mean = mean(Celsius),
-            gs_airhumid = mean(Humid_new)) %>% 
+            #mean temp duirng growing season
+            gs_mean = mean(Celsius)) %>% 
   unnest(cols = c(gs_max95))
 
-#soil moisture
-gs_sm <- 
-  gs_calc %>%
-  filter(Loc == "GT") %>%
-  group_by(Site) %>%
-  summarise(gs_sm_mean = mean(Humid_new))
-
+### >> c) growing season df ----
 
 gs_stats <- 
   grow_season %>%
   full_join(.,gs_air,
-            by = "Site") %>%
-  full_join(.,gs_sm,
             by = "Site")
 
 
+### 3) Mean Summer Temperatures ---- 
 
-#Mean Summer Temp  
+#' ------------------------------------------------------------------#
+#' Summer is defined as the months of June - August
+#' Mean temperature calcualted ofr this period only
+#' ------------------------------------------------------------------#
 
 summer <-
   logger_raw %>%
@@ -181,8 +183,8 @@ summer <-
             )
 
 
+### 4) Mean Annual Temperature ---- 
 
-#Mean annual temp
 MAT <-
   logger_raw %>%
   filter(Loc == "AT") %>%
@@ -193,7 +195,7 @@ MAT <-
 
 #Temperature seasonality
 
-#Defiend as temp 'variation over a year based on $\sigma^2$ of weekly average temp' - since we don't have a 'clean' start on 01/01  end 31/12 logger_rawaset I will partition the number of days into weeks from when we started recording to when we stopped 
+#Defiend as temp 'variation over a year based on \sigma^2 of weekly average temp' - since we don't have a 'clean' start on 01/01  end 31/12 logger_rawaset I will partition the number of days into weeks from when we started recording to when we stopped 
 
 
 week_var <- # create a 'week' grouping variable
