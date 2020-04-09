@@ -103,10 +103,10 @@ plot.barb.est <-
              colors = "Rainbow",
              coefs = c("Mean annual temperature" = "MAT",
                        "Canopy gap" = "canopy_gap")) +
+  theme_bw() +
   theme(axis.text=element_text(size=14),
-        axis.title=element_text(size=14,face="bold"), 
-        axis.text.y =element_text(size=14)) +
-  theme_bw()
+        axis.title=element_text(size=14), 
+        axis.text.y =element_text(size=14))
 
 ggsave("Barbilophozia_estimate.png", 
        plot.barb.est,
@@ -144,10 +144,10 @@ plot.cal.est <-
              model.names = c("Area",
                              "Density",
                              "Reproductive potential")) +
+  theme_bw() +
   theme(axis.text=element_text(size=14),
-        axis.title=element_text(size=14,face="bold"), 
-        axis.text.y =element_text(size=14)) +
-  theme_bw()
+        axis.title=element_text(size=14), 
+        axis.text.y =element_text(size=14))
 
 ggsave("Calamagrostis_estimate.png", 
        plot.cal.est,
@@ -270,10 +270,10 @@ plot.lin.est <-
                              "Area",
                              "Density",
                              "Reproductive potential")) +
+  theme_bw() +
   theme(axis.text=element_text(size=14),
-        axis.title=element_text(size=14,face="bold"), 
-        axis.text.y =element_text(size=14)) +
-  theme_bw()
+        axis.title=element_text(size=14), 
+        axis.text.y =element_text(size=14))
 
 ggsave("Linnaea_estimate.png", 
        plot.lin.est,
@@ -408,14 +408,14 @@ plot.hyp.est <-
                        "Number of boulders" = "boulder"),
              model.names = c("Presence/absence",
                              "Area")) +
+  theme_bw() +
   theme(axis.text=element_text(size=14),
-        axis.title=element_text(size=14,face="bold"), 
-        axis.text.y =element_text(size=14)) +
-  theme_bw()
+        axis.title=element_text(size=14), 
+        axis.text.y =element_text(size=14))
 
 ggsave("Hypnum_estimate.png", 
        plot.hyp.est,
-       width = 11,
+       width = 15,
        height = 8)
 
 ### >>>> ii) Prediction Plots ----
