@@ -105,7 +105,8 @@ plot.barb.est <-
                        "Canopy gap" = "canopy_gap")) +
   theme(axis.text=element_text(size=14),
         axis.title=element_text(size=14,face="bold"), 
-        axis.text.y =element_text(size=14))
+        axis.text.y =element_text(size=14)) +
+  theme_bw()
 
 ggsave("Barbilophozia_estimate.png", 
        plot.barb.est,
@@ -145,7 +146,8 @@ plot.cal.est <-
                              "Reproductive potential")) +
   theme(axis.text=element_text(size=14),
         axis.title=element_text(size=14,face="bold"), 
-        axis.text.y =element_text(size=14))
+        axis.text.y =element_text(size=14)) +
+  theme_bw()
 
 ggsave("Calamagrostis_estimate.png", 
        plot.cal.est,
@@ -270,7 +272,8 @@ plot.lin.est <-
                              "Reproductive potential")) +
   theme(axis.text=element_text(size=14),
         axis.title=element_text(size=14,face="bold"), 
-        axis.text.y =element_text(size=14))
+        axis.text.y =element_text(size=14)) +
+  theme_bw()
 
 ggsave("Linnaea_estimate.png", 
        plot.lin.est,
@@ -407,7 +410,8 @@ plot.hyp.est <-
                              "Area")) +
   theme(axis.text=element_text(size=14),
         axis.title=element_text(size=14,face="bold"), 
-        axis.text.y =element_text(size=14))
+        axis.text.y =element_text(size=14)) +
+  theme_bw()
 
 ggsave("Hypnum_estimate.png", 
        plot.hyp.est,
