@@ -102,7 +102,10 @@ plot.barb.est <-
   plot_summs(mod.PA[[1]],
              colors = "Rainbow",
              coefs = c("Mean annual temperature" = "MAT",
-                       "Canopy gap" = "canopy_gap"))
+                       "Canopy gap" = "canopy_gap")) +
+  theme(axis.text=element_text(size=14),
+        axis.title=element_text(size=14,face="bold"), 
+        axis.text.y =element_text(size=14))
 
 ggsave("Barbilophozia_estimate.png", 
        plot.barb.est,
@@ -137,7 +140,10 @@ plot.cal.est <-
                        "\u0394 volume:Canopy gap" = "canopy_gap:vol"),
              model.names = c("Area",
                              "Density",
-                             "Reproductive potential"))
+                             "Reproductive potential")) +
+  theme(axis.text=element_text(size=14),
+        axis.title=element_text(size=14,face="bold"), 
+        axis.text.y =element_text(size=14))
 
 ggsave("Calamagrostis_estimate.png", 
        plot.cal.est,
@@ -243,7 +249,10 @@ plot.lin.est <-
              model.names = c("Presence/absence",
                              "Area",
                              "Density",
-                             "Reproductive potential"))
+                             "Reproductive potential")) +
+  theme(axis.text=element_text(size=14),
+        axis.title=element_text(size=14,face="bold"), 
+        axis.text.y =element_text(size=14))
 
 ggsave("Linnaea_estimate.png", 
        plot.lin.est,
@@ -347,18 +356,20 @@ ggsave("Linnaea_predict.png",
 ### >>>> i) Estimate plots ----
 
 plot.hyp.est <-
-  grid.arrange(plot_summs(mod.PA.noint[[4]],
-                          mod.area[[4]],
-                          colors = "Rainbow",
-                          coefs = c("Mean annual temperature" = "MAT",
-                                    "Maximum temperature" = "gs_max95",
-                                    "Canopy gap" = "canopy_gap",
-                                    "\u0394 volume" = "vol",
-                                    "\u0394 volume:Canopy gap" = "canopy_gap:vol",
-                                    "Number of boulders" = "boulder"),
-                          model.names = c("Presence/absence",
-                                          "Area"))
-  )
+  plot_summs(mod.PA.noint[[4]],
+             mod.area[[4]],
+             colors = "Rainbow",
+             coefs = c("Mean annual temperature" = "MAT",
+                       "Maximum temperature" = "gs_max95",
+                       "Canopy gap" = "canopy_gap",
+                       "\u0394 volume" = "vol",
+                       "\u0394 volume:Canopy gap" = "canopy_gap:vol",
+                       "Number of boulders" = "boulder"),
+             model.names = c("Presence/absence",
+                             "Area")) +
+  theme(axis.text=element_text(size=14),
+        axis.title=element_text(size=14,face="bold"), 
+        axis.text.y =element_text(size=14))
 
 ggsave("Hypnum_estimate.png", 
        plot.hyp.est,
