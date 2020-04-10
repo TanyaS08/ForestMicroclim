@@ -16,9 +16,7 @@
 
 #' ------------------------------------------------------------------#
 #'   TO DO:
-#'  - Work on refining the Field Sites Map
-#'       Place inset in main map
-#'       Export as a file
+#'  - 
 #' ------------------------------------------------------------------#
 
 ### 0) Preamble ----
@@ -179,7 +177,7 @@ summer <-
   filter(month > 5 & month < 9) %>%
   group_by(Site) %>%
   summarise(summer_temp_mean = mean(Celsius[Loc == "AT"]), #only for air temp
-            summer_sm_mean = mean(Humid_new[Loc == "GT"]) #only for soil RH
+            summer_sm_mean = mean(RH_new[Loc == "GT"]) #only for soil RH
             )
 
 
@@ -192,116 +190,161 @@ MAT <-
   summarise(MAT = mean(Celsius))
   
 
+### 5) Temperature seasonality ---- 
 
-#Temperature seasonality
+#' ------------------------------------------------------------------#
+#' Defiend as temp 'variation over a year based on \sigma^2 
+#'   of the weekly average temp'
+#' since we don't have a 'clean'  i.e. start on 01/01 end 31/12
+#'   I will partition the number of days into weeks from when we 
+#'   started recording to when we stopped 
+#' ------------------------------------------------------------------#
 
-#Defiend as temp 'variation over a year based on \sigma^2 of weekly average temp' - since we don't have a 'clean' start on 01/01  end 31/12 logger_rawaset I will partition the number of days into weeks from when we started recording to when we stopped 
+### >> a) create a 'week' grouping variable ----
 
-
-week_var <- # create a 'week' grouping variable
+week_var <- 
   logger_raw %>%
+  #selct air data
   filter(Loc == "AT") %>%
+  #group out days
   group_by(Site,  dayofyear) %>%
-  transmute(mean = mean(Celsius)) %>% #way to gather site by day of year
-  distinct() %>% #removes duplicates
+  #way to gather site by day of year
+  transmute(mean = mean(Celsius)) %>% 
+  #removes duplicates
+  distinct() %>% 
   ungroup() %>%
-  mutate(week = c(0, rep(1:(nrow(week_var)-1)%/%7)), #reps number for 7 diff days
+  #reps same number for 7 days
+  mutate(week = c(0, rep(1:(nrow(.)-1)%/%7)), 
+         #remove mean col
          mean = NULL)
+
+### >> b) calculate temperature variability ----
 
 Temp_var <-
   logger_raw %>%
-  filter(Loc == "AT") %>% #remove ground temps
-  left_join(., #add the 'week' grouping variable
+  #remove ground temps
+  filter(Loc == "AT") %>% 
+  #add the 'week' grouping variable
+  left_join(., 
             week_var,
             by = c("Site",
                    "dayofyear")) %>%
+  #group by week
   group_by(Site, week) %>%
-  summarise(mean = mean(Celsius)) %>% #weakly mean
+  #weakly mean
+  summarise(mean = mean(Celsius)) %>% 
   group_by(Site) %>%
-  summarise(temp_var = sd(mean)) #annual variance of means
+  #weekly variance of means
+  summarise(temp_var = sd(mean)) 
 
+### 6) Minimum temperature in coldest period ---- 
 
-#Minimum temp in coldest period
-#Defined as minimum temp during the coldest week/month. I will calculate the mean monthly temp and then select the monnth that is lowest and from there I can extract the lowest/min temp
+#' ------------------------------------------------------------------#
+#' Defined as minimum temp during the coldest week/month.
+#' I calculated the mean monthly temp and then selected the month 
+#'    that was lowest and from there I can extracted the lowest/min temp
+#' Minimum temerature caluclated using the 95th percitile of the
+#'    minimum value
+#' ------------------------------------------------------------------#
 
 
 min_temp <-
   logger_raw %>%
-  filter(Loc == "AT") %>% #remove ground loggers
+  #remove ground loggers
+  filter(Loc == "AT") %>% 
   group_by(Site, month, year) %>%
-  summarise(mean = mean(Celsius)) %>% #mean for each month
+  #mean for each month
+  summarise(mean = mean(Celsius)) %>% 
   group_by(Site) %>% 
+  #find month with min/lowest mean
   filter(.,
-         mean == min(mean)) %>% #find month with min/lowest mean
-  left_join(., #use as template to join orig logger_rawatset
+         mean == min(mean)) %>% 
+  #use as template to join original logger_raw df
+  left_join(., 
             logger_raw,
             by = c("Site",
                    "month",
                    "year")) %>%
   group_by(Site) %>%
-  summarise(min = min(Celsius), #calculates min (using 95%)
+  #calculates min (using 95%)
+  summarise(min = min(Celsius), 
             min95 = list(enframe(quantile(min, probs = 0.95),
                                  name = NULL,
                                  value = "min95"))) %>% 
   unnest(cols = c(min95))
 
+### 7) Annual temperature range ---- 
 
-#Temp annual range
-
-#The temperature variation over the year calculated as the difference between the max temp of the warmest period and the min of the coldest period. Here I will define cold and warm period similar to that for mean temp i.e. as the months with the highest/lowest means and then max - min
-
+#' ------------------------------------------------------------------#
+#' The temperature variation over the year calculated as the 
+#'    difference between the max temp of the warmest period 
+#'    and the min of the coldest period. 
+#' Here I will define cold and warm period similar to that for 
+#'    mean temp i.e. as the months with the highest/lowest means 
+#'    and then max - min
+#' Using the minimum tempwerature df from section 6
+#' ------------------------------------------------------------------#
 
 min_range <-
   logger_raw %>%
-  filter(Loc == "AT") %>% #remove ground loggers
+  #remove ground loggers
+  filter(Loc == "AT") %>% 
   group_by(Site, month, year) %>%
-  summarise(mean = mean(Celsius)) %>% #mean for each month
+  #mean for each month
+  summarise(mean = mean(Celsius)) %>% 
   group_by(Site) %>%
+  #find month with max/lowest mean
   filter(.,
-         mean == max(mean)) %>% #find month with max/lowest mean
-  left_join(., #use as template to join orig logger_rawatset
+         mean == max(mean)) %>% 
+  #use as template to join original logger_raw df
+  left_join(., 
             logger_raw,
             by = c("Site",
                    "month",
                    "year")) %>%
   group_by(Site) %>%
-  summarise(max = max(Celsius), #calculates max (using 95%)
+  #calculates max (using 95%)
+  summarise(max = max(Celsius), 
             max95 = list(enframe(quantile(max, probs = 0.95),
                                  name = NULL,
                                  value = "max95"))) %>% 
   unnest(cols = c(max95)) %>%
-  left_join(., #join max and min logger_rawasets
+  #join max and min logger_rawasets
+  left_join(., 
             min_temp,
             by = "Site") %>%
-  mutate(range = max - min, #calc range
+  #calculate range
+  mutate(range = max - min, 
          range95 = max95 - min95)
 
 
+### 8) Diurnal range ---- 
 
-#Diurnal range
-
-#This is calculated as the mean weakly temperature ranges over a year. 
-#So caluclate the min and max per week and then mean of those
-
+#' ------------------------------------------------------------------#
+#' This is calculated as the mean weakly temperature ranges over a year.
+#' So caluclate the min and max per week and then mean of those
+#' ------------------------------------------------------------------#
 
 daily_range <-
   logger_raw %>%
-  filter(Loc == "AT")%>% #remove ground temps
-  left_join(., #add the 'week' grouping variable
+  #remove ground temps
+  filter(Loc == "AT")%>% 
+  left_join(., 
+            #add the 'week' grouping variable
             week_var,
             by = c("Site",
-                   "dayofyear")) %>% #remove ground loggers
+                   "dayofyear")) %>% 
   group_by(Site, week, year) %>%
+  #calcualtions for for each week
   summarise(min = min(Celsius),
             max = max (Celsius),
-            range = max - min) %>% #mean for each week
+            range = max - min) %>% 
   group_by(Site) %>%
   summarise(daily_range = mean(range))
 
+### 9) Concatinate all df's ---- 
 
-#Concat logger_rawaset
-
-all_logger_rawa <- 
+all_logger_processed <- 
   MAT %>%
   full_join(.,
             summer,
@@ -319,9 +362,9 @@ all_logger_rawa <-
             daily_range,
             by = "Site")
 
-
-write.csv(all_logger_rawa,
-          "temp_data.csv")
+#save to data_processed folder
+write.csv(all_logger_processed,
+          file.path("data_processed", "logger_trimmed.csv"))
 
 
 # End of script ----
