@@ -364,7 +364,7 @@ all_logger_processed <-
 
 #save to data_processed folder
 write.csv(all_logger_processed,
-          file.path("data_processed", "logger_trimmed.csv"))
+          file.path("data_processed", "microclimate_summary_site.csv"))
 
 
 # End of script ----
