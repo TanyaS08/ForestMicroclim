@@ -55,7 +55,7 @@ barbilophozia.clean <-
 write.csv(barbilophozia.clean,
           file.path("data_processed", "barbilophozia.csv"))
   
-### >> a) Calamagrostis ----
+### >> b) Calamagrostis ----
 calamagrostis.raw <- read_excel(file.path("data_raw", "Dataset.xlsx"),
                                 sheet = "Calamagrostis")
 
@@ -74,8 +74,64 @@ calamagrostis.clean <-
     #Number of subpopulations extracted from the tally as all values are the same for the site can
     #calcualte the mean
     Number_subpop = mean(n),
-    Number_flower = sum(Flower),
+    Number_reproduce = sum(Flower),
     Number_cells = sum(Cells))
 
+#Write file
+write.csv(calamagrostis.clean,
+          file.path("data_processed", "calamagrostis.csv"))
+
+### >> c) Linnaea ----
+linnaea.raw <- read_excel(file.path("data_raw", "Dataset.xlsx"),
+                                sheet = "Linnea")
+
+linnaea.clean <-
+  linnaea.raw %>%
+  #re-class variables
+  mutate(
+    Site = as.factor(Site)) %>%
+  group_by(Site) %>% 
+  #this creates a variable that counts the number of subpopulations
+  add_tally() %>%
+  #sum variables to the site level
+  summarise(
+    #total area
+    ##TODO
+    #Number of subpopulations extracted from the tally as all values are the same for the site can
+    #calcualte the mean
+    Number_subpop = mean(n),
+    Number_reproduce = sum(flower),
+    Number_cells = sum(cell))
+
+#Write file
+write.csv(linnaea.clean,
+          file.path("data_processed", "linnaea.csv"))
+
+### >> d) Hypnum ----
+hypnum.raw <- read_excel(file.path("data_raw", "Dataset.xlsx"),
+                          sheet = "Hypnum")
+
+hypnum.clean <-
+  hypnum.raw %>%
+  #re-class variables
+  mutate(
+    Site = as.factor(Site),
+    Area = as.numeric(Area)) %>%
+  group_by(Site) %>% 
+  #this creates a variable that counts the number of subpopulations
+  add_tally() %>%
+  #sum variables to the site level
+  summarise(
+    #total area
+    ##TODO
+    #Number of subpopulations extracted from the tally as all values are the same for the site can
+    #calcualte the mean
+    Number_subpop = mean(n),
+    Number_reproduce = sum(Spore),
+    Area = sum(Area))
+
+#Write file
+write.csv(hypnum.clean,
+          file.path("data_processed", "hypnum.csv"))
 
 ### End of script ----
