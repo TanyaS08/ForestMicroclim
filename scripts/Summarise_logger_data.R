@@ -21,10 +21,7 @@
 
 ### 0) Preamble ----
 ### >> a) Dependencies ----
-library(dplyr)
-library(ggplot2)
-library(purrr)
-library(tibble)
+library(tidyverse)
 library(tidyr)
 library(corrplot)
 library(tidylog)
@@ -32,8 +29,8 @@ library(tidylog)
 ### >> b) Import data ----
 
 logger_raw <- read.csv(file.path("data_raw", "logger_trimmed.csv"),
-                header = T, 
-                sep = ",")
+                       header = T, 
+                       sep = ",")
 
 ### 1) Scaling soil Relative Humidity ----
 
@@ -61,7 +58,7 @@ RH_max_95 <-
            Loc) %>%
   #calculate site max
   summarise(max_sm = max(max), 
-  #95% of site max
+            #95% of site max
             sm_max95 = list(enframe(quantile(`max`, probs = 0.95), 
                                     name = NULL,
                                     value = "sm_max95"))) %>% 
@@ -151,8 +148,8 @@ gs_air <-
   #extract max and 95th percentile of max
   summarise(gs_max = max(Celsius),
             gs_max95 = list(enframe(quantile(`max(Celsius)`, probs = 0.95),
-                                 name = NULL,
-                                 value = "gs_max95")),
+                                    name = NULL,
+                                    value = "gs_max95")),
             #mean temp duirng growing season
             gs_mean = mean(Celsius)) %>% 
   unnest(cols = c(gs_max95))
@@ -178,7 +175,7 @@ summer <-
   group_by(Site) %>%
   summarise(summer_temp_mean = mean(Celsius[Loc == "AT"]), #only for air temp
             summer_sm_mean = mean(RH_new[Loc == "GT"]) #only for soil RH
-            )
+  )
 
 
 ### 4) Mean Annual Temperature ---- 
@@ -188,7 +185,7 @@ MAT <-
   filter(Loc == "AT") %>%
   group_by(Site) %>%
   summarise(MAT = mean(Celsius))
-  
+
 
 ### 5) Temperature seasonality ---- 
 
