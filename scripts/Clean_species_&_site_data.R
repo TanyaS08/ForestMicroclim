@@ -25,6 +25,11 @@ library(readxl)
 
 env.raw <- read_excel(file.path("data_raw", "Env.xlsx"))
 
+#this df is needed to get total areas for Calamgrostis and Linnaea
+site.raw <- read_excel(file.path("data_raw", "Dataset.xlsx"),
+                       sheet = "General") %>%
+  mutate(Site = as.factor(Site))
+
 ### >> a) Environmental data ----
 
 
@@ -69,13 +74,18 @@ calamagrostis.clean <-
   add_tally() %>%
   #sum variables to the site level
   summarise(
-    #total area
-    ##TODO
-    #Number of subpopulations extracted from the tally as all values are the same for the site can
-    #calcualte the mean
+    #Number of subpopulations extracted from the tally as all values are the same for the site can calcualte the mean
     Number_subpop = mean(n),
     Number_reproduce = sum(Flower),
-    Number_cells = sum(Cells))
+    Number_cells = sum(Cells)) %>%
+  #add total area data
+  left_join(.,
+            site.raw %>%
+              #select only site number and area for Calamagrostis - also rename now
+              transmute(.,
+                        Site = Site,
+                        Area = Calamagrostis),
+            by = "Site")
 
 #Write file
 write.csv(calamagrostis.clean,
@@ -95,13 +105,20 @@ linnaea.clean <-
   add_tally() %>%
   #sum variables to the site level
   summarise(
-    #total area
-    ##TODO
     #Number of subpopulations extracted from the tally as all values are the same for the site can
     #calcualte the mean
     Number_subpop = mean(n),
     Number_reproduce = sum(flower),
-    Number_cells = sum(cell))
+    Number_cells = sum(cell)) %>%
+  #add total area data
+  left_join(.,
+            site.raw %>%
+              #select only site number and area for Linnaea - also rename now
+              transmute(.,
+                        Site = Site,
+                        Area = Linnea),
+            by = "Site")
+  
 
 #Write file
 write.csv(linnaea.clean,
