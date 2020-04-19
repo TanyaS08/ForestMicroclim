@@ -17,7 +17,9 @@
 #'   - Clean Pres/Abs model
 #'   - Area model
 #'   - Density model
-#'   _ Reproductive potential model
+#'   - Reproductive potential model
+#'   - Automated model selection between with and without 
+#'     interaction term
 #' ------------------------------------------------------------------#
 
 ### 0) Preamble ----
@@ -293,126 +295,117 @@ ref_list <- list( #each spp has own list
 ### 2) Models ----
 ### >> a) Presence/Absence ----
 
+#list to store full model
 mod.PA <- vector('list', 4)
+#list ot store model without interaction term
 mod.PA.noint <- vector('list', 4)
+# list to store plot outputs
 plot.PA <- vector('list', 4)
 plot.PA.noint <- vector('list', 4)
+
 interact.PA <- vector('list', 4)
 heat.PA <- vector('list', 4)
 
+#Hypnum distribution predicted by poisson .'.
+#only Barbilophozia, Calamgrostis and Linnaea 
+#in this loop
 for (i in 1:3) {
   
-  dat3 <- as.data.frame(ref_list[[i]][[1]])
-  mod <- glm(y ~ MAT + gs_max95 +
-               canopy_gap * vol,
-             data = dat3,
-             family = binomial(link = "logit"))
+  #full model
+  mod.PA[[i]] <- step(glm(y ~ MAT + gs_max95 +
+                            canopy_gap * vol,
+                          #select correct df from list
+                          data = as.data.frame(ref_list[[i]][[1]]),
+                          family = binomial(link = "logit"))
+                      )
   
-  mod.PA[[i]] <- step(mod)
-  
-  mod <- glm(y ~ MAT + gs_max95 +
-               canopy_gap + vol,
-             data = dat3,
-             family = binomial(link = "logit"))
-  
-  mod.PA.noint[[i]] <- step(mod)
-  
-  eff <- ggeffects::ggeffect(mod.PA[[i]])
-  eff2 <- do.call(rbind.data.frame, eff)
-  long <- reshape2::melt(dat3,
-                         id.vars = c("y")) %>%
-    dplyr::rename(group = variable) %>%
-    dplyr::left_join(.,
-                     eff2,
-                     by = "group") %>%
-    na.omit
+  #model without interaction
+  mod.PA.noint[[i]] <- step(glm(y ~ MAT + gs_max95 +
+                                  canopy_gap + vol,
+                                #select correct df from list
+                                data = as.data.frame(ref_list[[i]][[1]]),
+                                family = binomial(link = "logit"))
+                            )
   
   plot.PA[[i]] <-
-    ggplot(data =  long) +    
+    ggplot(data =  
+             #put data in long form
+             reshape2::melt(as.data.frame(ref_list[[i]][[1]]),
+                                  id.vars = c("y")) %>%
+             #rename grouping variable
+             rename(group = variable) %>%
+             #add predicted values
+             left_join(.,
+                       do.call(rbind.data.frame, 
+                               #this function creates presiction outputs
+                               ggeffects::ggeffect(mod.PA[[i]])),
+                       by = "group") %>%
+             na.omit) +   
+    #plot CI for predicted values
     geom_ribbon(aes(x = x,
                     ymin = conf.low,
                     ymax = conf.high),
                 alpha = 0.3) +
+    #split ot by different predictor variables
     facet_wrap(vars(group)) +
+    #plot predicted vlaues
     geom_line(aes(x = x,
                   y = predicted)) +
+    #plot recorded values
     geom_point(aes(y = y,
                    x = value)) +
     theme_bw() +
     theme(legend.position = "none") +
-    ggtitle("Pres/Abs")
+    ggtitle("Presence/Absence")
 }
 
+#This loop is for Hypnum
+#using a poisson distribution
 for (i in 4) {
   
-  dat3 <- ref_list[[i]][[1]]
+  mod.PA[[i]] <- step(glm(y ~ MAT + gs_max95 + boulder + 
+                            canopy_gap * vol,
+                          data = ref_list[[i]][[1]],
+                          family = binomial(link = "logit"))
+  )
   
-  mod <- glm(y ~ MAT + gs_max95 + boulder + 
-               canopy_gap * vol,
-             data = dat3,
-             family = binomial(link = "logit"))
+  mod.PA.noint[[i]] <- step(glm(y ~ MAT + gs_max95 + boulder + 
+                                  canopy_gap + vol,
+                                data = ref_list[[i]][[1]],
+                                family = binomial(link = "logit"))
+  )
   
-  mod.PA[[i]] <- step(mod)
-  
-  mod <- glm(y ~ MAT + gs_max95 + boulder + 
-               canopy_gap + vol,
-             data = dat3,
-             family = binomial(link = "logit"))
-  
-  mod.PA.noint[[i]] <- step(mod)
-  
-  eff <- 
-  eff2 <- do.call(rbind.data.frame,
-                  ggeffects::ggeffect(mod.PA[[i]]))
-  long <- as.data.frame(dat3) %>%
-    reshape2::melt(.,
-                   id.vars = "y") %>%
-    dplyr::rename(group = variable) %>%
-    dplyr::left_join(.,
-                     eff2,
-                     by = "group") %>%
-    na.omit
-  
+
   plot.PA[[i]] <-
-    ggplot(data =  long) +    
+    ggplot(data =  
+             #put data in long form
+             reshape2::melt(as.data.frame(ref_list[[i]][[1]]),
+                            id.vars = c("y")) %>%
+             #rename grouping variable
+             rename(group = variable) %>%
+             #add predicted values
+             left_join(.,
+                       do.call(rbind.data.frame, 
+                               #this function creates presiction outputs
+                               ggeffects::ggeffect(mod.PA[[i]])),
+                       by = "group") %>%
+             na.omit) +   
+    #plot CI for predicted values
     geom_ribbon(aes(x = x,
                     ymin = conf.low,
                     ymax = conf.high),
                 alpha = 0.3) +
+    #split ot by different predictor variables
     facet_wrap(vars(group)) +
+    #plot predicted vlaues
     geom_line(aes(x = x,
                   y = predicted)) +
+    #plot recorded values
     geom_point(aes(y = y,
                    x = value)) +
     theme_bw() +
     theme(legend.position = "none") +
-    ggtitle("Pres/Abs")  
-  
-  eff <- ggeffects::ggeffect(mod.PA.noint[[i]])
-  eff2 <- do.call(rbind.data.frame, eff)
-  long <- as.data.frame(dat3) %>%
-    reshape2::melt(.,
-                   id.vars = "y") %>%
-    dplyr::rename(group = variable) %>%
-    dplyr::left_join(.,
-                     eff2,
-                     by = "group") %>%
-    na.omit
-  
-  plot.PA.noint[[i]] <-
-    ggplot(data =  long) +    
-    geom_ribbon(aes(x = x,
-                    ymin = conf.low,
-                    ymax = conf.high),
-                alpha = 0.3) +
-    facet_wrap(vars(group)) +
-    geom_line(aes(x = x,
-                  y = predicted)) +
-    geom_point(aes(y = y,
-                   x = value)) +
-    theme_bw() +
-    theme(legend.position = "none") +
-    ggtitle("Pres/Abs") 
+    ggtitle("Presence/Absence") 
   
 }
 
