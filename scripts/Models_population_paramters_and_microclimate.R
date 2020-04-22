@@ -133,7 +133,7 @@ ref_list <- list( #each spp has own list
       na.omit() %>%
       as.list(),
     #list for area model
-    Area = dat %>%
+    Area = microclim %>%
       full_join(.,
                 spp_list[[2]][,c("Site","Area")],
                 by = "Site") %>%
@@ -199,7 +199,7 @@ ref_list <- list( #each spp has own list
       na.omit() %>%
       as.list(),
     #list for area model
-    Area = dat %>%
+    Area = microclim %>%
       full_join(.,
                 spp_list[[3]][,c("Site","Area")],
                 by = "Site") %>%
@@ -306,7 +306,7 @@ plot.PA.noint <- vector('list', 4)
 interact.PA <- vector('list', 4)
 heat.PA <- vector('list', 4)
 
-#Hypnum distribution predicted by poisson .'.
+#Hypnum distribution has boulder as co-varaite .'.
 #only Barbilophozia, Calamgrostis and Linnaea 
 #in this loop
 for (i in 1:3) {
@@ -360,7 +360,7 @@ for (i in 1:3) {
 }
 
 #This loop is for Hypnum
-#using a poisson distribution
+#using boulder as a co-variate
 for (i in 4) {
   
   mod.PA[[i]] <- step(glm(y ~ MAT + gs_max95 + boulder + 
@@ -436,5 +436,414 @@ for (i in 2:3) {
   
   
 }
+
+### >> b) Area ----
+
+#list to store full model
+mod.area <- vector('list', 4)
+#list ot store model without interaction term
+mod.area.noint <- vector('list', 4)
+# list to store plot outputs
+plot.area <- vector('list', 4)
+
+interact.area <- vector('list', 4)
+heat.area <- vector('list', 4)
+
+#Hypnum distribution predicted by poisson .'.
+#only Calamgrostis and Linnaea 
+#in this loop
+for (i in 2:3) {
+  
+  #full model
+  mod.area[[i]] <- step(glm(cbind(y, (area-y)) ~ MAT + gs_max95 +
+                            canopy_gap * vol,
+                          #select correct df from list
+                          data = as.data.frame(ref_list[[i]][[2]]),
+                          family = binomial())
+  )
+  
+  #model without interaction
+  mod.area.noint[[i]] <- step(glm(cbind(y, (area-y)) ~ MAT + gs_max95 +
+                                  canopy_gap + vol,
+                                #select correct df from list
+                                data = as.data.frame(ref_list[[i]][[2]]),
+                                family = binomial())
+  )
+  
+  plot.area[[i]] <-
+    ggplot(data =  
+             #put data in long form
+             reshape2::melt(as.data.frame(ref_list[[i]][[2]]),
+                            id.vars = c("y")) %>%
+             #rename grouping variable
+             rename(group = variable) %>%
+             #add predicted values
+             left_join(.,
+                       do.call(rbind.data.frame, 
+                               #this function creates presiction outputs
+                               ggeffects::ggeffect(mod.area[[i]])),
+                       by = "group") %>%
+             na.omit) +   
+    #plot CI for predicted values
+    geom_ribbon(aes(x = x,
+                    ymin = conf.low,
+                    ymax = conf.high),
+                alpha = 0.3) +
+    #split ot by different predictor variables
+    facet_wrap(vars(group)) +
+    #plot predicted vlaues
+    geom_line(aes(x = x,
+                  y = predicted)) +
+    #plot recorded values
+    geom_point(aes(y = y,
+                   x = value)) +
+    theme_bw() +
+    theme(legend.position = "none") +
+    ggtitle("Area")
+}
+
+#This loop is for Hypnum
+#using a poisson distribution
+for (i in 4) {
+  
+  mod.area[[i]] <- step(glm(y ~ MAT + gs_max95 + boulder + 
+                            canopy_gap * vol,
+                          data = ref_list[[i]][[2]],
+                          family = poisson(link = "log"))
+  )
+  
+  mod.area.noint[[i]] <- step(glm(y ~ MAT + gs_max95 + boulder + 
+                                  canopy_gap + vol,
+                                data = ref_list[[i]][[2]],
+                                family = poisson(link = "log"))
+  )
+  
+  
+  plot.area[[i]] <-
+    ggplot(data =  
+             #put data in long form
+             reshape2::melt(as.data.frame(ref_list[[i]][[2]]),
+                            id.vars = c("y")) %>%
+             #rename grouping variable
+             rename(group = variable) %>%
+             #add predicted values
+             left_join(.,
+                       do.call(rbind.data.frame, 
+                               #this function creates presiction outputs
+                               ggeffects::ggeffect(mod.area[[i]])),
+                       by = "group") %>%
+             na.omit) +   
+    #plot CI for predicted values
+    geom_ribbon(aes(x = x,
+                    ymin = conf.low,
+                    ymax = conf.high),
+                alpha = 0.3) +
+    #split ot by different predictor variables
+    facet_wrap(vars(group)) +
+    #plot predicted vlaues
+    geom_line(aes(x = x,
+                  y = predicted)) +
+    #plot recorded values
+    geom_point(aes(y = y,
+                   x = value)) +
+    theme_bw() +
+    theme(legend.position = "none") +
+    ggtitle("Area") 
+  
+}
+
+
+for (i in 2:3) {
+  
+  heat.area[[i]] <-
+    ggplot(data=transform(expand.grid(vol=seq(-2,2, 0.1),
+                                      canopy_gap=seq(-2,2, 0.1)) %>% #this creates every possible combo of vals
+                            mutate(MAT = rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                                 canopy_gap=seq(-2,2, 0.1)))),
+                                   gs_max95 = rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                                      canopy_gap=seq(-2,2, 0.1)))),
+                                   boulder =  rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                                      canopy_gap=seq(-2,2, 0.1))))), 
+                          predicted=predict.glm(ref_list[[i]][[2]],
+                                                expand.grid(vol=seq(-2,2, 0.1),
+                                                            canopy_gap=seq(-2,2, 0.1)) %>% #this creates every possible combo of vals
+                                                  mutate(MAT = rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                                                       canopy_gap=seq(-2,2, 0.1)))),
+                                                         gs_max95 = rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                                                            canopy_gap=seq(-2,2, 0.1)))),
+                                                         boulder =  rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                                                            canopy_gap=seq(-2,2, 0.1))))),
+                                                type = "response")), 
+           aes(y=canopy_gap, x=vol,)) +
+    geom_tile(aes(fill = predicted)) +
+    scale_fill_distiller(palette = "YlOrRd",
+                         direction = 1) +
+    theme_bw() +
+    ggtitle("Area")
+  
+  
+}
+
+### >> c) Density ----
+
+#list to store full model
+mod.density <- vector('list', 4)
+#list ot store model without interaction term
+mod.density.noint <- vector('list', 4)
+# list to store plot outputs
+plot.density <- vector('list', 4)
+
+interact.density <- vector('list', 4)
+heat.density <- vector('list', 4)
+
+#Hypnum distribution predicted by poisson .'.
+#only Calamgrostis and Linnaea 
+#in this loop
+for (i in 2:3) {
+  
+  #full model
+  mod.density[[i]] <- step(glm(cbind(y, (area-y)) ~ MAT + gs_max95 +
+                              canopy_gap * vol,
+                            #select correct df from list
+                            data = as.data.frame(ref_list[[i]][[4]]),
+                            family = binomial())
+  )
+  
+  #model without interaction
+  mod.density.noint[[i]] <- step(glm(cbind(y, (area-y)) ~ MAT + gs_max95 +
+                                    canopy_gap + vol,
+                                  #select correct df from list
+                                  data = as.data.frame(ref_list[[i]][[4]]),
+                                  family = binomial())
+  )
+  
+  plot.density[[i]] <-
+    ggplot(data =  
+             #put data in long form
+             reshape2::melt(as.data.frame(ref_list[[i]][[4]]),
+                            id.vars = c("y")) %>%
+             #rename grouping variable
+             rename(group = variable) %>%
+             #add predicted values
+             left_join(.,
+                       do.call(rbind.data.frame, 
+                               #this function creates presiction outputs
+                               ggeffects::ggeffect(mod.density[[i]])),
+                       by = "group") %>%
+             na.omit) +   
+    #plot CI for predicted values
+    geom_ribbon(aes(x = x,
+                    ymin = conf.low,
+                    ymax = conf.high),
+                alpha = 0.3) +
+    #split ot by different predictor variables
+    facet_wrap(vars(group)) +
+    #plot predicted vlaues
+    geom_line(aes(x = x,
+                  y = predicted)) +
+    #plot recorded values
+    geom_point(aes(y = y,
+                   x = value)) +
+    theme_bw() +
+    theme(legend.position = "none") +
+    ggtitle("Density")
+}
+
+#This loop is for Hypnum
+#using a poisson distribution
+for (i in 4) {
+  
+  mod.density[[i]] <- step(glm(y ~ MAT + gs_max95 + boulder + 
+                              canopy_gap * vol,
+                            data = ref_list[[i]][[4]],
+                            family = poisson(link = "log"))
+  )
+  
+  mod.density.noint[[i]] <- step(glm(y ~ MAT + gs_max95 + boulder + 
+                                    canopy_gap + vol,
+                                  data = ref_list[[i]][[4]],
+                                  family = poisson(link = "log"))
+  )
+  
+  
+  plot.density[[i]] <-
+    ggplot(data =  
+             #put data in long form
+             reshape2::melt(as.data.frame(ref_list[[i]][[4]]),
+                            id.vars = c("y")) %>%
+             #rename grouping variable
+             rename(group = variable) %>%
+             #add predicted values
+             left_join(.,
+                       do.call(rbind.data.frame, 
+                               #this function creates presiction outputs
+                               ggeffects::ggeffect(mod.density[[i]])),
+                       by = "group") %>%
+             na.omit) +   
+    #plot CI for predicted values
+    geom_ribbon(aes(x = x,
+                    ymin = conf.low,
+                    ymax = conf.high),
+                alpha = 0.3) +
+    #split ot by different predictor variables
+    facet_wrap(vars(group)) +
+    #plot predicted vlaues
+    geom_line(aes(x = x,
+                  y = predicted)) +
+    #plot recorded values
+    geom_point(aes(y = y,
+                   x = value)) +
+    theme_bw() +
+    theme(legend.position = "none") +
+    ggtitle("Density") 
+  
+}
+
+
+for (i in 2:3) {
+  
+  heat.density[[i]] <-
+    ggplot(data=transform(expand.grid(vol=seq(-2,2, 0.1),
+                                      canopy_gap=seq(-2,2, 0.1)) %>% #this creates every possible combo of vals
+                            mutate(MAT = rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                                 canopy_gap=seq(-2,2, 0.1)))),
+                                   gs_max95 = rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                                      canopy_gap=seq(-2,2, 0.1)))),
+                                   boulder =  rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                                      canopy_gap=seq(-2,2, 0.1))))), 
+                          predicted=predict.glm(mod.density[[i]],
+                                                expand.grid(vol=seq(-2,2, 0.1),
+                                                            canopy_gap=seq(-2,2, 0.1)) %>% #this creates every possible combo of vals
+                                                  mutate(MAT = rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                                                       canopy_gap=seq(-2,2, 0.1)))),
+                                                         gs_max95 = rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                                                            canopy_gap=seq(-2,2, 0.1)))),
+                                                         boulder =  rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                                                            canopy_gap=seq(-2,2, 0.1))))),
+                                                type = "response")), 
+           aes(y=canopy_gap, x=vol,)) +
+    geom_tile(aes(fill = predicted)) +
+    scale_fill_distiller(palette = "YlOrRd",
+                         direction = 1) +
+    theme_bw() +
+    ggtitle("Density")
+  
+  
+}
+
+### >> d) Reproductive potential ----
+
+#list to store full model
+mod.flower <- vector('list', 4)
+#list ot store model without interaction term
+mod.flower.noint <- vector('list', 4)
+# list to store plot outputs
+plot.flower <- vector('list', 4)
+plot.flower.noint <- vector('list', 4)
+
+
+#Hypnum distribution has boulder as co-varaite .'.
+#only Barbilophozia, Calamgrostis and Linnaea 
+#in this loop
+for (i in 2:3) {
+  
+  #full model
+  mod.flower[[i]] <- step(glm(y ~ MAT + gs_max95 +
+                            canopy_gap * vol,
+                          #select correct df from list
+                          data = as.data.frame(ref_list[[i]][[3]]),
+                          family = binomial(link = "logit"))
+  )
+  
+  #model without interaction
+  mod.flower.noint[[i]] <- step(glm(y ~ MAT + gs_max95 +
+                                  canopy_gap + vol,
+                                #select correct df from list
+                                data = as.data.frame(ref_list[[i]][[3]]),
+                                family = binomial(link = "logit"))
+  )
+  
+  plot.flower[[i]] <-
+    ggplot(data =  
+             #put data in long form
+             reshape2::melt(as.data.frame(ref_list[[i]][[3]]),
+                            id.vars = c("y")) %>%
+             #rename grouping variable
+             rename(group = variable) %>%
+             #add predicted values
+             left_join(.,
+                       do.call(rbind.data.frame, 
+                               #this function creates presiction outputs
+                               ggeffects::ggeffect(mod.flower[[i]])),
+                       by = "group") %>%
+             na.omit) +   
+    #plot CI for predicted values
+    geom_ribbon(aes(x = x,
+                    ymin = conf.low,
+                    ymax = conf.high),
+                alpha = 0.3) +
+    #split ot by different predictor variables
+    facet_wrap(vars(group)) +
+    #plot predicted vlaues
+    geom_line(aes(x = x,
+                  y = predicted)) +
+    #plot recorded values
+    geom_point(aes(y = y,
+                   x = value)) +
+    theme_bw() +
+    theme(legend.position = "none") +
+    ggtitle("Presence/Absence")
+}
+
+#This loop is for Hypnum
+#using boulder as a co-variate
+for (i in 4) {
+  
+  mod.flower[[i]] <- step(glm(y ~ MAT + gs_max95 + boulder + 
+                            canopy_gap * vol,
+                          data = ref_list[[i]][[3]],
+                          family = binomial(link = "logit"))
+  )
+  
+  mod.flower.noint[[i]] <- step(glm(y ~ MAT + gs_max95 + boulder + 
+                                  canopy_gap + vol,
+                                data = ref_list[[i]][[3]],
+                                family = binomial(link = "logit"))
+  )
+  
+  
+  plot.flower[[i]] <-
+    ggplot(data =  
+             #put data in long form
+             reshape2::melt(as.data.frame(ref_list[[i]][[3]]),
+                            id.vars = c("y")) %>%
+             #rename grouping variable
+             rename(group = variable) %>%
+             #add predicted values
+             left_join(.,
+                       do.call(rbind.data.frame, 
+                               #this function creates presiction outputs
+                               ggeffects::ggeffect(mod.flower[[i]])),
+                       by = "group") %>%
+             na.omit) +   
+    #plot CI for predicted values
+    geom_ribbon(aes(x = x,
+                    ymin = conf.low,
+                    ymax = conf.high),
+                alpha = 0.3) +
+    #split ot by different predictor variables
+    facet_wrap(vars(group)) +
+    #plot predicted vlaues
+    geom_line(aes(x = x,
+                  y = predicted)) +
+    #plot recorded values
+    geom_point(aes(y = y,
+                   x = value)) +
+    theme_bw() +
+    theme(legend.position = "none") +
+    ggtitle("Presence/Absence") 
+  
+}
+
 
 ### End of script ----
