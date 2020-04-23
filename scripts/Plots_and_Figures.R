@@ -7,9 +7,9 @@
 
 #' ------------------------------------------------------------------#
 #'  DATA IMPORTING AND DATAFRAMES
-#'  - Import and clean data using Gr3_data_import_checking.R
+#'  - Need to fitrst run models and generate plots using Models_population_paramters_and_microclimate.R
 #'    Can also be found in PFTC5_Gr3 Repo at: 
-#'    (https://github.com/TanyaS08/PFTC5_Gr3/blob/master/scripts/Gr3_data_import_checking.R)
+#'    (https://github.com/TanyaS08/ForestMicroclim/blob/master/scripts/Models_population_paramters_and_microclimate.R)
 #'  - plots are stored as objects in list
 #'  - each number in the corresonds to a species
 #'        1 = Babilophizoa
