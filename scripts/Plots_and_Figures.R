@@ -170,6 +170,7 @@ plot.cal.pred <-
       xlab(NULL) +
       theme(axis.text=element_text(size=14),
             strip.text.x = element_text(size = 12)),
+    
     #heat plot for area
     heat.area[[2]] +
       labs(tag = "A-ii") +
@@ -195,6 +196,7 @@ plot.cal.pred <-
                label = "Got lighter") +
       theme(axis.text=element_text(size=14),
             strip.text.x = element_text(size = 12)),
+    
     #prediction for density
     plot.density[[2]] +
       facet_wrap(vars(group),
@@ -207,6 +209,7 @@ plot.cal.pred <-
       xlab(NULL) +
       theme(axis.text=element_text(size=14),
             strip.text.x = element_text(size = 12)),
+    
     #heat plot for density
     heat.density[[2]] +
       labs(tag = "B-ii") +
@@ -232,8 +235,9 @@ plot.cal.pred <-
                label = "Got lighter") +
       theme(axis.text=element_text(size=14),
             strip.text.x = element_text(size = 12)),
+    
     #predition for reproductive output
-    plot.flower.noint[[2]] +
+    plot.flower[[2]] +
       facet_wrap(vars(group),
                  labeller = as_labeller(c("MAT" = "Mean annual temperature",
                                           "gs_max95" = "Maximum temperature",
@@ -256,10 +260,10 @@ ggsave("Calamagrostis_predict.png",
 ### >>>> i) Estimate plot ----
 
 plot.lin.est <-
-  plot_summs(mod.PA.noint[[3]],
+  plot_summs(mod.PA[[3]],
              mod.area[[3]],
              mod.density[[3]],
-             mod.flower.noint[[3]],
+             mod.flower[[3]],
              colors = "Rainbow",
              coefs = c("Mean annual temperature" = "MAT",
                        "Maximum temperature" = "gs_max95",
@@ -285,7 +289,7 @@ ggsave("Linnaea_estimate.png",
 plot.lin.pred <- 
   grid.arrange(
     #plot prediction for P/A
-    plot.PA.noint[[3]] +
+    plot.PA[[3]] +
       facet_wrap(vars(group),
                  labeller = as_labeller(c("MAT" = "Mean annual temperature",
                                           "gs_max95" = "Maximum temperature",
@@ -296,8 +300,10 @@ plot.lin.pred <-
       xlab(NULL) +
       theme(axis.text=element_text(size=14),
             strip.text.x = element_text(size = 12)),
+    
     #blank panel
     blank,
+    
     #predictions for area
     plot.area[[3]] +
       facet_wrap(vars(group),
@@ -310,6 +316,7 @@ plot.lin.pred <-
       xlab(NULL) +
       theme(axis.text=element_text(size=14),
             strip.text.x = element_text(size = 12)),
+    
     #heat plot for area
     heat.area[[3]] +
       labs(tag = "B-ii") +
@@ -335,6 +342,7 @@ plot.lin.pred <-
                label = "Got lighter") +
       theme(axis.text=element_text(size=14),
             strip.text.x = element_text(size = 12)),
+    
     #predictions for density
     plot.density[[3]] +
       facet_wrap(vars(group),
@@ -347,6 +355,7 @@ plot.lin.pred <-
       xlab(NULL) +
       theme(axis.text=element_text(size=14),
             strip.text.x = element_text(size = 10)), 
+    
     #heat plot for density
     heat.density[[3]] +
       labs(tag = "C-ii") +
@@ -372,8 +381,9 @@ plot.lin.pred <-
                label = "Got lighter") +
       theme(axis.text=element_text(size=14),
             strip.text.x = element_text(size = 12)),
+    
     #predictions for reproductive potential
-    plot.flower.noint[[3]] +
+    plot.flower[[3]] +
       facet_wrap(vars(group),
                  labeller = as_labeller(c("MAT" = "Mean annual temperature",
                                           "gs_max95" = "Maximum temperature",
@@ -397,7 +407,7 @@ ggsave("Linnaea_predict.png",
 ### >>>> i) Estimate plots ----
 
 plot.hyp.est <-
-  plot_summs(mod.PA.noint[[4]],
+  plot_summs(mod.PA[[4]],
              mod.area[[4]],
              colors = "Rainbow",
              coefs = c("Mean annual temperature" = "MAT",
@@ -423,7 +433,7 @@ ggsave("Hypnum_estimate.png",
 plot.hyp.pred <-
   grid.arrange(
     #predict plot P/A
-    plot.PA.noint[[4]] +
+    plot.PA[[4]] +
       facet_wrap(vars(group),
                  labeller = as_labeller(c("MAT" = "Mean annual temperature",
                                           "gs_max95" = "Maximum temperature",

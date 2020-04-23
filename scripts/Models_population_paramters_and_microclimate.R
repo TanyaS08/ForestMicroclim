@@ -8,18 +8,15 @@
 #' ------------------------------------------------------------------#
 #'  - This script runs the generalised linear models for species
 #'    population paramters and microclimate variables
-#'  - This script can be run without needinf to run any other 
-#'    dependencies.
+#'  - This script can be run without needing to run any other 
+#'    dependencies/scripts.
 #' ------------------------------------------------------------------#
 
 #' ------------------------------------------------------------------#
 #'   TO DO:
-#'   - Clean Pres/Abs model
-#'   - Area model
-#'   - Density model
-#'   - Reproductive potential model
 #'   - Automated model selection between with and without 
 #'     interaction term
+#'   - insert if function/loop for when there is no model to plot/predict
 #' ------------------------------------------------------------------#
 
 ### 0) Preamble ----
@@ -312,26 +309,30 @@ heat.PA <- vector('list', 4)
 for (i in 1:3) {
   
   #full model
-  mod.PA[[i]] <- step(glm(y ~ MAT + gs_max95 +
-                            canopy_gap * vol,
-                          #select correct df from list
-                          data = as.data.frame(ref_list[[i]][[1]]),
-                          family = binomial(link = "logit"))
-                      )
+  mod.PA[[i]] <-    
+    #include step down selection function
+    step(glm(y ~ MAT + gs_max95 +
+               canopy_gap * vol,
+             #select correct df from list
+             data = as.data.frame(ref_list[[i]][[1]]),
+             family = binomial(link = "logit"))
+    )
   
   #model without interaction
-  mod.PA.noint[[i]] <- step(glm(y ~ MAT + gs_max95 +
-                                  canopy_gap + vol,
-                                #select correct df from list
-                                data = as.data.frame(ref_list[[i]][[1]]),
-                                family = binomial(link = "logit"))
-                            )
+  mod.PA.noint[[i]] <-    
+    #include step down selection function
+    step(glm(y ~ MAT + gs_max95 +
+               canopy_gap + vol,
+             #select correct df from list
+             data = as.data.frame(ref_list[[i]][[1]]),
+             family = binomial(link = "logit"))
+    )
   
   plot.PA[[i]] <-
     ggplot(data =  
              #put data in long form
              reshape2::melt(as.data.frame(ref_list[[i]][[1]]),
-                                  id.vars = c("y")) %>%
+                            id.vars = c("y")) %>%
              #rename grouping variable
              rename(group = variable) %>%
              #add predicted values
@@ -363,19 +364,23 @@ for (i in 1:3) {
 #using boulder as a co-variate
 for (i in 4) {
   
-  mod.PA[[i]] <- step(glm(y ~ MAT + gs_max95 + boulder + 
-                            canopy_gap * vol,
-                          data = ref_list[[i]][[1]],
-                          family = binomial(link = "logit"))
-  )
+  mod.PA[[i]] <-   
+    #include step down selection function
+    step(glm(y ~ MAT + gs_max95 + boulder + 
+               canopy_gap * vol,
+             data = ref_list[[i]][[1]],
+             family = binomial(link = "logit"))
+    )
   
-  mod.PA.noint[[i]] <- step(glm(y ~ MAT + gs_max95 + boulder + 
-                                  canopy_gap + vol,
-                                data = ref_list[[i]][[1]],
-                                family = binomial(link = "logit"))
-  )
+  mod.PA.noint[[i]] <-   
+    #include step down selection function
+    step(glm(y ~ MAT + gs_max95 + boulder + 
+               canopy_gap + vol,
+             data = ref_list[[i]][[1]],
+             family = binomial(link = "logit"))
+    )
   
-
+  
   plot.PA[[i]] <-
     ggplot(data =  
              #put data in long form
@@ -412,22 +417,24 @@ for (i in 4) {
 
 for (i in 2:3) {
   
-  dat3 <- ref_list[[i]][[1]]
-  
-  res <- mod.PA[[i]] #model for predicting
-  newdf <- expand.grid(vol=seq(-2,2, 0.1),
-                       canopy_gap=seq(-2,2, 0.1)) %>% #this creates every possible combo of vals
-    mutate(MAT = rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
-                                         canopy_gap=seq(-2,2, 0.1)))),
-           gs_max95 = rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
-                                              canopy_gap=seq(-2,2, 0.1)))),
-           boulder =  rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
-                                              canopy_gap=seq(-2,2, 0.1)))))
-  
-  heat.PA[[i]] <-
-    ggplot(data=transform(newdf, predicted=predict.glm(res, newdf,
-                                                       type = "response")), 
-           aes(y=canopy_gap, x=vol,)) +
+  ggplot(data=transform(expand.grid(vol=seq(-2,2, 0.1),
+                                    canopy_gap=seq(-2,2, 0.1)) %>% #this creates every possible combo of vals
+                          mutate(MAT = rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                               canopy_gap=seq(-2,2, 0.1)))),
+                                 gs_max95 = rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                                    canopy_gap=seq(-2,2, 0.1)))),
+                                 boulder =  rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                                    canopy_gap=seq(-2,2, 0.1))))), 
+                        predicted=predict.glm(mod.PA[[i]], expand.grid(vol=seq(-2,2, 0.1),
+                                                                       canopy_gap=seq(-2,2, 0.1)) %>% #this creates every possible combo of vals
+                                                mutate(MAT = rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                                                     canopy_gap=seq(-2,2, 0.1)))),
+                                                       gs_max95 = rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                                                          canopy_gap=seq(-2,2, 0.1)))),
+                                                       boulder =  rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
+                                                                                          canopy_gap=seq(-2,2, 0.1))))),
+                                              type = "response")), 
+         aes(y=canopy_gap, x=vol,)) +
     geom_tile(aes(fill = predicted)) +
     scale_fill_distiller(palette = "YlOrRd",
                          direction = 1) +
@@ -455,25 +462,31 @@ heat.area <- vector('list', 4)
 for (i in 2:3) {
   
   #full model
-  mod.area[[i]] <- step(glm(cbind(y, (area-y)) ~ MAT + gs_max95 +
-                            canopy_gap * vol,
-                          #select correct df from list
-                          data = as.data.frame(ref_list[[i]][[2]]),
-                          family = binomial())
-  )
+  mod.area[[i]] <-  
+    #iclude step down selection function
+    step(glm(cbind(y, (area-y)) ~ MAT + gs_max95 +
+               canopy_gap * vol,
+             #select correct df from list
+             data = as.data.frame(ref_list[[i]][[2]]),
+             family = binomial())
+    )
   
   #model without interaction
-  mod.area.noint[[i]] <- step(glm(cbind(y, (area-y)) ~ MAT + gs_max95 +
-                                  canopy_gap + vol,
-                                #select correct df from list
-                                data = as.data.frame(ref_list[[i]][[2]]),
-                                family = binomial())
-  )
+  mod.area.noint[[i]] <- 
+    #iclude step down selection function
+    step(glm(cbind(y, (area-y)) ~ MAT + gs_max95 +
+               canopy_gap + vol,
+             #select correct df from list
+             data = as.data.frame(ref_list[[i]][[2]]),
+             family = binomial())
+    )
   
   plot.area[[i]] <-
     ggplot(data =  
              #put data in long form
-             reshape2::melt(as.data.frame(ref_list[[i]][[2]]),
+             reshape2::melt(as.data.frame(ref_list[[i]][[2]]) %>%
+                              #turn y values into proabbility
+                              mutate(y = y/area),
                             id.vars = c("y")) %>%
              #rename grouping variable
              rename(group = variable) %>%
@@ -507,15 +520,15 @@ for (i in 2:3) {
 for (i in 4) {
   
   mod.area[[i]] <- step(glm(y ~ MAT + gs_max95 + boulder + 
-                            canopy_gap * vol,
-                          data = ref_list[[i]][[2]],
-                          family = poisson(link = "log"))
+                              canopy_gap * vol,
+                            data = ref_list[[i]][[2]],
+                            family = poisson(link = "log"))
   )
   
   mod.area.noint[[i]] <- step(glm(y ~ MAT + gs_max95 + boulder + 
-                                  canopy_gap + vol,
-                                data = ref_list[[i]][[2]],
-                                family = poisson(link = "log"))
+                                    canopy_gap + vol,
+                                  data = ref_list[[i]][[2]],
+                                  family = poisson(link = "log"))
   )
   
   
@@ -553,7 +566,7 @@ for (i in 4) {
 }
 
 
-for (i in 2:3) {
+for (i in 2:4) {
   
   heat.area[[i]] <-
     ggplot(data=transform(expand.grid(vol=seq(-2,2, 0.1),
@@ -564,7 +577,7 @@ for (i in 2:3) {
                                                                       canopy_gap=seq(-2,2, 0.1)))),
                                    boulder =  rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
                                                                       canopy_gap=seq(-2,2, 0.1))))), 
-                          predicted=predict.glm(ref_list[[i]][[2]],
+                          predicted=predict.glm(mod.area[[i]],
                                                 expand.grid(vol=seq(-2,2, 0.1),
                                                             canopy_gap=seq(-2,2, 0.1)) %>% #this creates every possible combo of vals
                                                   mutate(MAT = rep(0, nrow(expand.grid(vol=seq(-2,2, 0.1),
@@ -603,24 +616,26 @@ for (i in 2:3) {
   
   #full model
   mod.density[[i]] <- step(glm(cbind(y, (area-y)) ~ MAT + gs_max95 +
-                              canopy_gap * vol,
-                            #select correct df from list
-                            data = as.data.frame(ref_list[[i]][[4]]),
-                            family = binomial())
+                                 canopy_gap * vol,
+                               #select correct df from list
+                               data = as.data.frame(ref_list[[i]][[4]]),
+                               family = binomial())
   )
   
   #model without interaction
   mod.density.noint[[i]] <- step(glm(cbind(y, (area-y)) ~ MAT + gs_max95 +
-                                    canopy_gap + vol,
-                                  #select correct df from list
-                                  data = as.data.frame(ref_list[[i]][[4]]),
-                                  family = binomial())
+                                       canopy_gap + vol,
+                                     #select correct df from list
+                                     data = as.data.frame(ref_list[[i]][[4]]),
+                                     family = binomial())
   )
   
   plot.density[[i]] <-
     ggplot(data =  
              #put data in long form
-             reshape2::melt(as.data.frame(ref_list[[i]][[4]]),
+             reshape2::melt(as.data.frame(ref_list[[i]][[4]]) %>%
+                              #turn y values into proabbility
+                              mutate(y = y/area),
                             id.vars = c("y")) %>%
              #rename grouping variable
              rename(group = variable) %>%
@@ -647,56 +662,6 @@ for (i in 2:3) {
     theme_bw() +
     theme(legend.position = "none") +
     ggtitle("Density")
-}
-
-#This loop is for Hypnum
-#using a poisson distribution
-for (i in 4) {
-  
-  mod.density[[i]] <- step(glm(y ~ MAT + gs_max95 + boulder + 
-                              canopy_gap * vol,
-                            data = ref_list[[i]][[4]],
-                            family = poisson(link = "log"))
-  )
-  
-  mod.density.noint[[i]] <- step(glm(y ~ MAT + gs_max95 + boulder + 
-                                    canopy_gap + vol,
-                                  data = ref_list[[i]][[4]],
-                                  family = poisson(link = "log"))
-  )
-  
-  
-  plot.density[[i]] <-
-    ggplot(data =  
-             #put data in long form
-             reshape2::melt(as.data.frame(ref_list[[i]][[4]]),
-                            id.vars = c("y")) %>%
-             #rename grouping variable
-             rename(group = variable) %>%
-             #add predicted values
-             left_join(.,
-                       do.call(rbind.data.frame, 
-                               #this function creates presiction outputs
-                               ggeffects::ggeffect(mod.density[[i]])),
-                       by = "group") %>%
-             na.omit) +   
-    #plot CI for predicted values
-    geom_ribbon(aes(x = x,
-                    ymin = conf.low,
-                    ymax = conf.high),
-                alpha = 0.3) +
-    #split ot by different predictor variables
-    facet_wrap(vars(group)) +
-    #plot predicted vlaues
-    geom_line(aes(x = x,
-                  y = predicted)) +
-    #plot recorded values
-    geom_point(aes(y = y,
-                   x = value)) +
-    theme_bw() +
-    theme(legend.position = "none") +
-    ggtitle("Density") 
-  
 }
 
 
@@ -749,18 +714,18 @@ for (i in 2:3) {
   
   #full model
   mod.flower[[i]] <- step(glm(y ~ MAT + gs_max95 +
-                            canopy_gap * vol,
-                          #select correct df from list
-                          data = as.data.frame(ref_list[[i]][[3]]),
-                          family = binomial(link = "logit"))
+                                canopy_gap * vol,
+                              #select correct df from list
+                              data = as.data.frame(ref_list[[i]][[3]]),
+                              family = binomial(link = "logit"))
   )
   
   #model without interaction
   mod.flower.noint[[i]] <- step(glm(y ~ MAT + gs_max95 +
-                                  canopy_gap + vol,
-                                #select correct df from list
-                                data = as.data.frame(ref_list[[i]][[3]]),
-                                family = binomial(link = "logit"))
+                                      canopy_gap + vol,
+                                    #select correct df from list
+                                    data = as.data.frame(ref_list[[i]][[3]]),
+                                    family = binomial(link = "logit"))
   )
   
   plot.flower[[i]] <-
@@ -800,15 +765,15 @@ for (i in 2:3) {
 for (i in 4) {
   
   mod.flower[[i]] <- step(glm(y ~ MAT + gs_max95 + boulder + 
-                            canopy_gap * vol,
-                          data = ref_list[[i]][[3]],
-                          family = binomial(link = "logit"))
+                                canopy_gap * vol,
+                              data = ref_list[[i]][[3]],
+                              family = binomial(link = "logit"))
   )
   
   mod.flower.noint[[i]] <- step(glm(y ~ MAT + gs_max95 + boulder + 
-                                  canopy_gap + vol,
-                                data = ref_list[[i]][[3]],
-                                family = binomial(link = "logit"))
+                                      canopy_gap + vol,
+                                    data = ref_list[[i]][[3]],
+                                    family = binomial(link = "logit"))
   )
   
   
