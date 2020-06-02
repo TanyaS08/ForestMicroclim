@@ -57,7 +57,8 @@ blank <- grid.rect(gp=gpar(col="white"))
 ### >> a) Sweden overview ----
 #could use as an insert
 world <- world
-dat <- read.delim("Gen.txt", header = T)
+dat <- read.delim(file.path("data_raw", "Gen.txt"),
+                  header = T)
 ords <- dat[c(17,3,35,52,55,43,27),]
 swe = world %>% 
   filter(name_long == "Sweden")
