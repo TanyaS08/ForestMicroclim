@@ -75,7 +75,8 @@ overplot <- ggplot(swe) +
 
 
 ### >> b) Site map ----
-gen <- read.delim("Gen.txt", header = T)
+gen <- read.delim(file.path("data_raw", "Gen.txt"),
+                  header = T)
 
 #base map dimensions using co-ords
 height <- max(gen$lat) - min(gen$lat)
